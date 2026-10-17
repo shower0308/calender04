@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FITPRO - 莫蘭迪教練課程管理系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        morandi: {
+                            50: '#F5F6F8',
+                            100: '#E8ECEF',
+                            200: '#D5DCDE',
+                            300: '#B8C4C7',
+                            400: '#94A5A9',
+                            500: '#75888C', // Primary Morandi Sage/Slate
+                            600: '#5C6D71',
+                            700: '#465357',
+                            800: '#323B3E',
+                            900: '#202628'
+                        },
+                        sand: {
+                            100: '#F7F5F0',
+                            200: '#EFECE6',
+                            300: '#E1DDD5',
+                            500: '#C2BBB0',
+                            700: '#8C857B'
+                        },
+                        rose: {
+                            100: '#F7ECEB',
+                            300: '#E6C6C3',
+                            500: '#C49895',
+                            700: '#916562'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F5F6F8;
+            color: #323B3E;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbar for sleek aesthetic */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F5F6F8;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D5DCDE;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A5A9;
+        }
+
+        /* Blocked / Off-day Stripe Background */
+        .bg-blocked-stripes {
+            background-color: #E6E1D8;
+            background-image: repeating-linear-gradient(45deg, #DFD9CE 0, #DFD9CE 10px, #E6E1D8 10px, #E6E1D8 20px);
+        }
+
+        /* Lesson Tag Badge Style with forced single-line clamping */
+        .lesson-tag-item {
+            font-size: 0.72rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            border-left: 3px solid transparent;
+            transition: all 0.15s ease;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 100%;
+        }
+
+        .lesson-tag-item .tag-content {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            width: 100%;
+            display: inline-block;
+        }
+
+        /* Morandi Tag Status Variants */
+        .tag-status-pending { background-color: #f2ebd9; color: #736148; border-left-color: #c4a47c; }
+        .tag-status-confirmed { background-color: #e5ece9; color: #435b52; border-left-color: #7b9e8f; }
+        .tag-status-completed { background-color: #e3e8ee; color: #415161; border-left-color: #788a9c; }
+        .tag-status-cancelled { background-color: #f2e6e6; color: #855252; border-left-color: #b87b7b; opacity: 0.75; text-decoration: line-through; }
+
+        /* Responsive Calendar Cell Styling */
+        .calendar-day-cell {
+            min-height: 85px;
+            transition: background-color 0.15s ease;
+        }
+        @media (max-width: 640px) {
+            .calendar-day-cell {
+                min-height: 60px;
+                padding: 2px;
+            }
+            .lesson-tag-item {
+                font-size: 0.65rem;
+                padding: 1px 4px;
+                margin-bottom: 2px;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+        }
+
+        /* Animation utilities */
+        .fade-in {
+            animation: fadeIn 0.2s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-morandi-200">
+
+    <!-- TOP NAV BAR -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-morandi-200 sticky top-0 z-30 px-4 py-3 transition-all">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand & Mode Switcher -->
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-morandi-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    F
+                </div>
+                <div>
+                    <h1 class="font-bold text-gray-800 text-base leading-tight tracking-wide">FITPRO</h1>
+                    <p class="text-xs text-morandi-400 font-medium">莫蘭迪教練管理系統</p>
+                </div>
+                
+                <!-- View Mode Badge -->
+                <button id="view-mode-toggle" onclick="toggleViewMode()" class="ml-2 px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 shadow-sm bg-morandi-50 text-morandi-700 border-morandi-200 hover:bg-morandi-100">
+                    <i id="view-mode-icon" class="fas fa-user-shield"></i>
+                    <span id="view-mode-text">教練管理模式</span>
+                </button>
+            </div>
+
+            <!-- Sync Controls & Actions -->
+            <div class="flex items-center space-x-2">
+                <!-- Sync Status Indicator -->
+                <div id="sync-status" class="hidden sm:flex items-center gap-1.5 text-xs text-morandi-500 bg-morandi-50 px-2.5 py-1 rounded-lg border border-morandi-100">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="sync-status-text">已連線同步</span>
+                </div>
+
+                <!-- Blocked Days / Off-day Settings Btn -->
+                <button onclick="openBlockedModal()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-1.5">
+                    <i class="fas fa-calendar-xmark"></i>
+                    <span class="hidden md:inline">設定休假/灰格日</span>
+                </button>
+
+                <!-- Add Booking Btn -->
+                <button id="btn-add-booking" onclick="openBookingModal()" class="bg-morandi-500 hover:bg-morandi-600 active:scale-95 text-white px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-medium shadow-sm transition-all flex items-center gap-1.5">
+                    <i class="fas fa-plus"></i>
+                    <span>新增預約</span>
+                </button>
+
+                <!-- Students Drawer Btn -->
+                <button onclick="openStudentsModal()" class="bg-sand-200 hover:bg-sand-300 text-sand-700 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-1.5">
+                    <i class="fas fa-users"></i>
+                    <span class="hidden md:inline">學員列表</span>
+                </button>
+
+                <!-- Settings Dropdown Toggle -->
+                <button onclick="toggleSettingsMenu()" class="p-2 text-morandi-500 hover:text-morandi-700 hover:bg-morandi-100 rounded-lg transition-all relative">
+                    <i class="fas fa-cog text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Popup Menu -->
+        <div id="settings-menu" class="hidden absolute right-4 top-14 bg-white border border-morandi-200 shadow-xl rounded-xl p-3 w-64 z-50 fade-in text-xs space-y-2">
+            <div class="font-semibold text-morandi-700 border-b pb-1 mb-1 flex justify-between items-center">
+                <span>系統與數據設定</span>
+                <i class="fas fa-sliders-h text-morandi-400"></i>
+            </div>
+            
+            <button onclick="exportDataJSON()" class="w-full text-left px-2.5 py-1.5 hover:bg-morandi-50 rounded text-gray-700 flex items-center justify-between">
+                <span><i class="fas fa-download mr-2 text-morandi-400"></i>匯出 JSON 備份</span>
+                <i class="fas fa-chevron-right text-gray-300 text-[10px]"></i>
+            </button>
+            
+            <label class="w-full text-left px-2.5 py-1.5 hover:bg-morandi-50 rounded text-gray-700 flex items-center justify-between cursor-pointer">
+                <span><i class="fas fa-upload mr-2 text-morandi-400"></i>匯入 JSON 備份</span>
+                <input type="file" accept=".json" onchange="importDataJSON(event)" class="hidden">
+                <i class="fas fa-chevron-right text-gray-300 text-[10px]"></i>
+            </label>
+
+            <button onclick="triggerCloudSync()" class="w-full text-left px-2.5 py-1.5 hover:bg-morandi-50 rounded text-gray-700 flex items-center justify-between">
+                <span><i class="fas fa-sync-alt mr-2 text-morandi-400"></i>手動雲端同步</span>
+                <i class="fas fa-chevron-right text-gray-300 text-[10px]"></i>
+            </button>
+
+            <div class="pt-2 border-t border-morandi-100 space-y-1">
+                <label class="block text-[11px] font-medium text-morandi-600">Google Apps Script WebApp URL</label>
+                <input type="text" id="gas-url-input" placeholder="https://script.google.com/..." class="w-full p-1.5 text-[11px] border border-morandi-200 rounded focus:ring-1 focus:ring-morandi-400 outline-none">
+                <button onclick="saveGASUrl()" class="w-full bg-morandi-400 text-white py-1 rounded text-[11px] hover:bg-morandi-500 font-medium">儲存 WebApp 連結</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-2 sm:px-4 py-4 flex-1 w-full space-y-4">
+
+        <!-- Privacy Alert Bar in Student Mode -->
+        <div id="student-mode-banner" class="hidden bg-rose-100/80 border border-rose-300 text-rose-700 px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-eye-slash text-base"></i>
+                <span><strong>目前為學員瀏覽模式：</strong> 為保護個人隱私，學員姓名已隱藏，僅顯示已被預約時段。</span>
+            </div>
+            <button onclick="toggleViewMode()" class="underline text-xs font-semibold hover:text-rose-900">切換為教練模式</button>
+        </div>
+
+        <!-- CONTROLS & FILTER BAR -->
+        <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-morandi-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            
+            <!-- Date Navigator -->
+            <div class="flex items-center justify-between sm:justify-start space-x-2">
+                <div class="flex items-center space-x-1 bg-morandi-50 p-1 rounded-xl border border-morandi-100">
+                    <button onclick="navigatePeriod(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-sm text-morandi-600 transition-all">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                    <button onclick="goToToday()" class="px-3 py-1 text-xs font-semibold text-morandi-700 hover:bg-white hover:shadow-sm rounded-lg transition-all">
+                        今天
+                    </button>
+                    <button onclick="navigatePeriod(1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-sm text-morandi-600 transition-all">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+
+                <h2 id="current-period-title" class="text-base sm:text-lg font-bold text-morandi-800 tracking-tight">
+                    2026 年 10 月
+                </h2>
+            </div>
+
+            <!-- View Switcher & Filters -->
+            <div class="flex flex-wrap items-center justify-between md:justify-end gap-2">
+                <!-- Status Filter -->
+                <select id="filter-status" onchange="renderCalendar()" class="bg-morandi-50 border border-morandi-200 text-morandi-700 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-morandi-400 font-medium">
+                    <option value="ALL">全部狀態</option>
+                    <option value="CONFIRMED">已確認 (預約)</option>
+                    <option value="PENDING">審核中</option>
+                    <option value="COMPLETED">已完成</option>
+                    <option value="CANCELLED">已取消</option>
+                </select>
+
+                <!-- Student Filter (Coach view only) -->
+                <select id="filter-student" onchange="renderCalendar()" class="bg-morandi-50 border border-morandi-200 text-morandi-700 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-morandi-400 font-medium max-w-[130px]">
+                    <option value="ALL">全部學員</option>
+                </select>
+
+                <!-- View Type Toggle (Month / Week) -->
+                <div class="flex items-center bg-morandi-100 p-1 rounded-xl border border-morandi-200">
+                    <button id="view-btn-month" onclick="switchViewType('month')" class="px-3 py-1 text-xs font-semibold rounded-lg transition-all bg-white text-morandi-800 shadow-sm">
+                        月視圖
+                    </button>
+                    <button id="view-btn-week" onclick="switchViewType('week')" class="px-3 py-1 text-xs font-semibold rounded-lg transition-all text-morandi-600 hover:text-morandi-800">
+                        週視圖
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CALENDAR BOARD CONTAINER -->
+        <div id="calendar-wrapper" class="bg-white rounded-2xl shadow-sm border border-morandi-200 overflow-hidden">
+            <!-- Dynamic Calendar Rendered Here -->
+            <div id="calendar-grid" class="w-full"></div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="text-center py-4 text-xs text-morandi-400 border-t border-morandi-200/60 bg-white/50 mt-6">
+        FITPRO Morandi Edition &copy; 2026 | 精緻教練預約排程系統
+    </footer>
+
+    <!-- MODAL: BLOCKED / OFF-DAYS MANAGEMENT -->
+    <div id="modal-blocked" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-morandi-100 max-w-md w-full p-5 space-y-4 fade-in">
+            <div class="flex justify-between items-center border-b border-morandi-100 pb-3">
+                <h3 class="font-bold text-morandi-800 text-base flex items-center gap-2">
+                    <i class="fas fa-calendar-xmark text-amber-600"></i>
+                    設定教練休假日 / 灰格日期
+                </h3>
+                <button onclick="closeBlockedModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-xs text-morandi-600">標記為灰格休假的日期將以斜線背景呈現，無法選填排課。</p>
+
+            <div class="space-y-3">
+                <div class="bg-morandi-50 p-3 rounded-xl border border-morandi-200 flex items-center gap-2">
+                    <input type="date" id="new-blocked-date" class="flex-1 p-2 text-xs border border-morandi-200 rounded-lg outline-none bg-white">
+                    <button type="button" onclick="addBlockedDate()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3.5 py-2 rounded-lg font-medium whitespace-nowrap">
+                        加入灰格
+                    </button>
+                </div>
+
+                <div class="flex justify-between items-center text-xs pt-1">
+                    <span class="font-bold text-morandi-700">目前的休假清單：</span>
+                    <button onclick="clearAllBlockedDays()" class="text-rose-600 hover:underline">清空全部</button>
+                </div>
+
+                <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1" id="blocked-days-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="pt-2 text-right">
+                <button onclick="closeBlockedModal()" class="px-4 py-2 bg-morandi-100 hover:bg-morandi-200 text-morandi-700 rounded-xl text-xs font-semibold">
+                    完成並關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT BOOKING -->
+    <div id="modal-booking" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-morandi-100 max-w-md w-full p-5 space-y-4 fade-in">
+            <div class="flex justify-between items-center border-b border-morandi-100 pb-3">
+                <h3 id="booking-modal-title" class="font-bold text-morandi-800 text-base">新增課程預約</h3>
+                <button onclick="closeBookingModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="booking-form" onsubmit="handleSaveBooking(event)" class="space-y-3 text-xs sm:text-sm">
+                <input type="hidden" id="booking-id">
+
+                <div>
+                    <label class="block text-xs font-semibold text-morandi-700 mb-1">選擇學員 *</label>
+                    <select id="booking-student-id" required class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-morandi-700 mb-1">日期 *</label>
+                        <input type="date" id="booking-date" required class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-morandi-700 mb-1">課程狀態</label>
+                        <select id="booking-status" class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none">
+                            <option value="CONFIRMED">已確認 (預約成功)</option>
+                            <option value="PENDING">審核待定</option>
+                            <option value="COMPLETED">課程已完成</option>
+                            <option value="CANCELLED">已取消</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-morandi-700 mb-1">開始時間 *</label>
+                        <input type="time" id="booking-start-time" required class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-morandi-700 mb-1">結束時間 *</label>
+                        <input type="time" id="booking-end-time" required class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-morandi-700 mb-1">課程項目 / 項目備註</label>
+                    <input type="text" id="booking-type" placeholder="例如：一對一私人教練課 / 重訓推廣" class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-morandi-700 mb-1">備註事項</label>
+                    <textarea id="booking-notes" rows="2" placeholder="填寫特殊需求、身體狀態紀錄..." class="w-full p-2.5 border border-morandi-200 rounded-xl bg-morandi-50 focus:ring-2 focus:ring-morandi-400 outline-none resize-none"></textarea>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end space-x-2">
+                    <button type="button" id="btn-delete-booking" onclick="handleDeleteBooking()" class="hidden bg-rose-100 hover:bg-rose-200 text-rose-700 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all mr-auto">
+                        刪除預約
+                    </button>
+                    <button type="button" onclick="closeBookingModal()" class="px-4 py-2 border border-morandi-200 rounded-xl text-morandi-600 hover:bg-morandi-50 text-xs font-semibold">
+                        取消
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-morandi-500 hover:bg-morandi-600 text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+                        儲存預約
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: STUDENTS MANAGEMENT -->
+    <div id="modal-students" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-morandi-100 max-w-lg w-full p-5 space-y-4 fade-in">
+            <div class="flex justify-between items-center border-b border-morandi-100 pb-3">
+                <h3 class="font-bold text-morandi-800 text-base flex items-center gap-2">
+                    <i class="fas fa-users-cog text-morandi-500"></i>
+                    學員名冊與課時管理
+                </h3>
+                <button onclick="closeStudentsModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Add New Student Inline Form -->
+            <form onsubmit="handleAddStudent(event)" class="bg-morandi-50 p-3 rounded-xl border border-morandi-200 flex items-center gap-2">
+                <input type="text" id="new-student-name" placeholder="新增學員姓名..." required class="flex-1 p-2 text-xs border border-morandi-200 rounded-lg outline-none focus:ring-1 focus:ring-morandi-400">
+                <input type="tel" id="new-student-phone" placeholder="電話 (選填)" class="w-28 p-2 text-xs border border-morandi-200 rounded-lg outline-none">
+                <button type="submit" class="bg-morandi-500 hover:bg-morandi-600 text-white text-xs px-3 py-2 rounded-lg font-medium whitespace-nowrap">
+                    新增
+                </button>
+            </form>
+
+            <!-- Student List Container -->
+            <div class="max-h-64 overflow-y-auto divide-y divide-morandi-100 pr-1" id="students-list-container">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="pt-2 text-right">
+                <button onclick="closeStudentsModal()" class="px-4 py-2 bg-morandi-100 hover:bg-morandi-200 text-morandi-700 rounded-xl text-xs font-semibold">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JASCRIPT APP LOGIC -->
+    <script>
+        // --- DEFAULT GAS URL ---
+        const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzA7lNFO-v22AfrZpQGRSvmDZTIFuI6rlVwD9y4BOzS20hniqbF-z_CBYeiUqCIBkkTFA/exec';
+
+        // --- APP STATE ---
+        const STATE = {
+            currentDate: new Date(),
+            viewType: 'month', // 'month' | 'week'
+            isStudentView: false, // true = Student/ViewOnly Mode, false = Coach Mode
+            gasUrl: localStorage.getItem('fitpro_gas_url') || DEFAULT_GAS_URL,
+            filterStatus: 'ALL',
+            filterStudent: 'ALL',
+            blockedDays: JSON.parse(localStorage.getItem('fitpro_blocked_days')) || [],
+            students: JSON.parse(localStorage.getItem('fitpro_students')) || [
+                { id: 'st-1', name: '王小明', phone: '0912-345-678', remainingLessons: 8 },
+                { id: 'st-2', name: '陳雅婷', phone: '0988-765-432', remainingLessons: 12 },
+                { id: 'st-3', name: '林志豪', phone: '0922-111-222', remainingLessons: 4 }
+            ],
+            bookings: JSON.parse(localStorage.getItem('fitpro_bookings')) || [
+                {
+                    id: 'bk-1',
+                    studentId: 'st-1',
+                    date: getFormattedDateStr(0), // Today
+                    startTime: '10:00',
+                    endTime: '11:00',
+                    type: '私人教練重訓課',
+                    status: 'CONFIRMED',
+                    notes: '注重胸背訓練'
+                },
+                {
+                    id: 'bk-2',
+                    studentId: 'st-2',
+                    date: getFormattedDateStr(1), // Tomorrow
+                    startTime: '14:00',
+                    endTime: '15:00',
+                    type: '體態評估與有氧',
+                    status: 'PENDING',
+                    notes: '首次體驗課'
+                }
+            ]
+        };
+
+        // --- HELPER FUNCTIONS ---
+        function getFormattedDateStr(offsetDays = 0) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            return d.toISOString().split('T')[0];
+        }
+
+        function saveDataToStorage() {
+            localStorage.setItem('fitpro_students', JSON.stringify(STATE.students));
+            localStorage.setItem('fitpro_bookings', JSON.stringify(STATE.bookings));
+            localStorage.setItem('fitpro_blocked_days', JSON.stringify(STATE.blockedDays));
+            populateStudentDropdowns();
+        }
+
+        // --- INIT & URL PARAMS ---
+        window.onload = function() {
+            // Check URL parameters for viewonly mode
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('viewonly') === 'true' || urlParams.get('mode') === 'student') {
+                STATE.isStudentView = true;
+            }
+
+            document.getElementById('gas-url-input').value = STATE.gasUrl;
+
+            updateViewModeUI();
+            populateStudentDropdowns();
+            renderCalendar();
+        };
+
+        // --- VIEW MODE TOGGLE (Privacy Mode) ---
+        function toggleViewMode() {
+            STATE.isStudentView = !STATE.isStudentView;
+            updateViewModeUI();
+            renderCalendar();
+        }
+
+        function updateViewModeUI() {
+            const toggleBtn = document.getElementById('view-mode-toggle');
+            const icon = document.getElementById('view-mode-icon');
+            const text = document.getElementById('view-mode-text');
+            const banner = document.getElementById('student-mode-banner');
+            const btnAdd = document.getElementById('btn-add-booking');
+
+            if (STATE.isStudentView) {
+                toggleBtn.className = "ml-2 px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 shadow-sm bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100";
+                icon.className = "fas fa-eye-slash";
+                text.innerText = "學員預覽模式";
+                banner.classList.remove('hidden');
+                btnAdd.classList.add('hidden');
+            } else {
+                toggleBtn.className = "ml-2 px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 shadow-sm bg-morandi-50 text-morandi-700 border-morandi-200 hover:bg-morandi-100";
+                icon.className = "fas fa-user-shield";
+                text.innerText = "教練管理模式";
+                banner.classList.add('hidden');
+                btnAdd.classList.remove('hidden');
+            }
+        }
+
+        // --- CALENDAR RENDER ENGINE ---
+        function switchViewType(type) {
+            STATE.viewType = type;
+            document.getElementById('view-btn-month').className = type === 'month' 
+                ? "px-3 py-1 text-xs font-semibold rounded-lg transition-all bg-white text-morandi-800 shadow-sm"
+                : "px-3 py-1 text-xs font-semibold rounded-lg transition-all text-morandi-600 hover:text-morandi-800";
+            
+            document.getElementById('view-btn-week').className = type === 'week' 
+                ? "px-3 py-1 text-xs font-semibold rounded-lg transition-all bg-white text-morandi-800 shadow-sm"
+                : "px-3 py-1 text-xs font-semibold rounded-lg transition-all text-morandi-600 hover:text-morandi-800";
+
+            renderCalendar();
+        }
+
+        function navigatePeriod(direction) {
+            if (STATE.viewType === 'month') {
+                STATE.currentDate.setMonth(STATE.currentDate.getMonth() + direction);
+            } else {
+                STATE.currentDate.setDate(STATE.currentDate.getDate() + (direction * 7));
+            }
+            renderCalendar();
+        }
+
+        function goToToday() {
+            STATE.currentDate = new Date();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            STATE.filterStatus = document.getElementById('filter-status').value;
+            STATE.filterStudent = document.getElementById('filter-student').value;
+
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            if (STATE.viewType === 'month') {
+                renderMonthView(grid);
+            } else {
+                renderWeekView(grid);
+            }
+        }
+
+        // MONTH VIEW RENDERER
+        function renderMonthView(container) {
+            const year = STATE.currentDate.getFullYear();
+            const month = STATE.currentDate.getMonth();
+
+            document.getElementById('current-period-title').innerText = `${year} 年 ${month + 1} 月`;
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startingDayOfWeek = firstDay.getDay(); // 0 = Sun
+            const totalDays = lastDay.getDate();
+
+            // Weekday Headers
+            const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
+            let html = `<div class="grid grid-cols-7 border-b border-morandi-200 bg-morandi-50/70 text-center text-xs font-semibold text-morandi-600">`;
+            daysOfWeek.forEach(d => {
+                html += `<div class="py-2">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 divide-x divide-y divide-morandi-100">`;
+
+            // Previous month padding
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                const dayNum = prevMonthLastDay - i;
+                html += `<div class="calendar-day-cell bg-morandi-50/40 p-1.5 text-morandi-300 text-xs select-none">${dayNum}</div>`;
+            }
+
+            // Current Month Days
+            const todayStr = getFormattedDateStr(0);
+            for (let day = 1; day <= totalDays; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === todayStr;
+                const isBlocked = STATE.blockedDays.includes(dateStr);
+
+                // Filter bookings for this date
+                const dayBookings = getFilteredBookingsForDate(dateStr);
+
+                html += `
+                    <div class="calendar-day-cell p-1 sm:p-2 transition-all relative group ${isBlocked ? 'bg-blocked-stripes cursor-not-allowed' : 'bg-white hover:bg-morandi-50/50 cursor-pointer'}" onclick="${isBlocked ? '' : `handleCellClick('${dateStr}')`}">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold ${isToday ? 'bg-morandi-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-sm' : (isBlocked ? 'text-amber-900/60' : 'text-morandi-700')}">${day}</span>
+                            <div class="flex items-center space-x-1">
+                                ${!STATE.isStudentView && !isBlocked ? `<i class="fas fa-plus text-[10px] text-morandi-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>` : ''}
+                                ${!STATE.isStudentView ? `<button onclick="event.stopPropagation(); toggleSingleBlockedDay('${dateStr}')" title="${isBlocked ? '解除灰格' : '設為灰格休假'}" class="text-[10px] ${isBlocked ? 'text-amber-800 font-bold' : 'text-gray-300 group-hover:text-amber-600'}"><i class="fas fa-ban"></i></button>` : ''}
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            ${!isBlocked ? dayBookings.map(b => renderBookingTag(b)).join('') : '<div class="text-[10px] text-amber-900/50 font-bold text-center mt-2">休假灰格</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Next month padding to complete 7x5 or 7x6 grid
+            const totalCells = startingDayOfWeek + totalDays;
+            const remainingCells = (7 - (totalCells % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                html += `<div class="calendar-day-cell bg-morandi-50/40 p-1.5 text-morandi-300 text-xs select-none">${i}</div>`;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // WEEK VIEW RENDERER
+        function renderWeekView(container) {
+            const curr = new Date(STATE.currentDate);
+            const first = curr.getDate() - curr.getDay(); // First day of current week (Sunday)
+            
+            const startOfWeek = new Date(curr.setDate(first));
+            const year = startOfWeek.getFullYear();
+            const month = startOfWeek.getMonth() + 1;
+
+            document.getElementById('current-period-title').innerText = `${year} 年 ${month} 月 (週檢視)`;
+
+            let html = `<div class="grid grid-cols-7 border-b border-morandi-200 bg-morandi-50/70 text-center text-xs font-semibold text-morandi-600">`;
+            const weekDays = [];
+
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(startOfWeek);
+                d.setDate(d.getDate() + i);
+                const dateStr = d.toISOString().split('T')[0];
+                const dayName = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+                const isToday = dateStr === getFormattedDateStr(0);
+
+                weekDays.push({ dateStr, dayNum: d.getDate(), dayName, isToday });
+
+                html += `
+                    <div class="py-2.5 ${isToday ? 'bg-morandi-100/80 text-morandi-800 font-bold' : ''}">
+                        <div>${dayName}</div>
+                        <div class="text-sm font-bold ${isToday ? 'text-morandi-600' : 'text-gray-700'}">${d.getDate()}</div>
+                    </div>
+                `;
+            }
+
+            html += `</div><div class="grid grid-cols-7 divide-x divide-morandi-100 min-h-[380px]">`;
+
+            weekDays.forEach(day => {
+                const isBlocked = STATE.blockedDays.includes(day.dateStr);
+                const dayBookings = getFilteredBookingsForDate(day.dateStr);
+                html += `
+                    <div class="calendar-day-cell p-1.5 sm:p-2 transition-all ${isBlocked ? 'bg-blocked-stripes cursor-not-allowed' : 'bg-white hover:bg-morandi-50/40 cursor-pointer'}" onclick="${isBlocked ? '' : `handleCellClick('${day.dateStr}')`}">
+                        <div class="flex justify-end mb-1">
+                            ${!STATE.isStudentView ? `<button onclick="event.stopPropagation(); toggleSingleBlockedDay('${day.dateStr}')" title="${isBlocked ? '解除灰格' : '設為灰格休假'}" class="text-[10px] ${isBlocked ? 'text-amber-800 font-bold' : 'text-gray-300 hover:text-amber-600'}"><i class="fas fa-ban"></i></button>` : ''}
+                        </div>
+                        <div class="space-y-1 mt-1">
+                            ${!isBlocked ? dayBookings.map(b => renderBookingTag(b)).join('') : '<div class="text-[10px] text-amber-900/50 font-bold text-center mt-2">休假灰格</div>'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- BLOCKED DAYS MANAGEMENT ---
+        function openBlockedModal() {
+            renderBlockedDaysList();
+            document.getElementById('modal-blocked').classList.remove('hidden');
+        }
+
+        function closeBlockedModal() {
+            document.getElementById('modal-blocked').classList.add('hidden');
+            renderCalendar();
+        }
+
+        function renderBlockedDaysList() {
+            const container = document.getElementById('blocked-days-list');
+            if (STATE.blockedDays.length === 0) {
+                container.innerHTML = `<p class="text-xs text-morandi-400 py-3 text-center">目前沒有設定休假灰格日</p>`;
+                return;
+            }
+
+            let html = '';
+            STATE.blockedDays.sort().forEach(dateStr => {
+                html += `
+                    <div class="py-1.5 px-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between text-xs text-amber-900">
+                        <span class="font-medium"><i class="fas fa-mug-hot mr-1.5 text-amber-600"></i>${dateStr}</span>
+                        <button onclick="removeBlockedDay('${dateStr}')" class="text-rose-500 hover:text-rose-700 font-bold px-1">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function addBlockedDate() {
+            const input = document.getElementById('new-blocked-date');
+            const dateStr = input.value;
+            if (!dateStr) return;
+
+            if (!STATE.blockedDays.includes(dateStr)) {
+                STATE.blockedDays.push(dateStr);
+                saveDataToStorage();
+                renderBlockedDaysList();
+                renderCalendar();
+                syncToCloud();
+            }
+            input.value = '';
+        }
+
+        function removeBlockedDay(dateStr) {
+            STATE.blockedDays = STATE.blockedDays.filter(d => d !== dateStr);
+            saveDataToStorage();
+            renderBlockedDaysList();
+            renderCalendar();
+            syncToCloud();
+        }
+
+        function toggleSingleBlockedDay(dateStr) {
+            if (STATE.blockedDays.includes(dateStr)) {
+                STATE.blockedDays = STATE.blockedDays.filter(d => d !== dateStr);
+            } else {
+                STATE.blockedDays.push(dateStr);
+            }
+            saveDataToStorage();
+            renderCalendar();
+            syncToCloud();
+        }
+
+        function clearAllBlockedDays() {
+            if (confirm('確定要清空所有休假灰格日嗎？')) {
+                STATE.blockedDays = [];
+                saveDataToStorage();
+                renderBlockedDaysList();
+                renderCalendar();
+                syncToCloud();
+            }
+        }
+
+        // TAG RENDERER WITH PRIVACY & NO-WRAP RULE
+        function renderBookingTag(booking) {
+            const student = STATE.students.find(s => s.id === booking.studentId);
+            const statusClass = `tag-status-${booking.status.toLowerCase()}`;
+
+            // Privacy mode logic: Hide name when viewonly/student mode is active
+            let displayTitle = '';
+            if (STATE.isStudentView) {
+                displayTitle = `${booking.startTime} (已被預約)`;
+            } else {
+                const studentName = student ? student.name : '未知學員';
+                displayTitle = `${booking.startTime} ${studentName}`;
+            }
+
+            return `
+                <div onclick="event.stopPropagation(); handleTagClick('${booking.id}')" 
+                     title="${displayTitle} - ${booking.type || ''}" 
+                     class="lesson-tag-item ${statusClass} cursor-pointer hover:brightness-95">
+                    <span class="tag-content">
+                        ${displayTitle}
+                    </span>
+                </div>
+            `;
+        }
+
+        function getFilteredBookingsForDate(dateStr) {
+            return STATE.bookings.filter(b => {
+                if (b.date !== dateStr) return false;
+                if (STATE.filterStatus !== 'ALL' && b.status !== STATE.filterStatus) return false;
+                if (STATE.filterStudent !== 'ALL' && b.studentId !== STATE.filterStudent) return false;
+                return true;
+            }).sort((a, b) => a.startTime.localeCompare(b.startTime));
+        }
+
+        // --- BOOKING MODAL ACTIONS ---
+        function handleCellClick(dateStr) {
+            if (STATE.isStudentView) return; // Prevent editing in student mode
+            if (STATE.blockedDays.includes(dateStr)) return; // Prevent booking on blocked days
+            openBookingModal(null, dateStr);
+        }
+
+        function handleTagClick(bookingId) {
+            if (STATE.isStudentView) return;
+            const booking = STATE.bookings.find(b => b.id === bookingId);
+            if (booking) {
+                openBookingModal(booking);
+            }
+        }
+
+        function openBookingModal(booking = null, defaultDate = '') {
+            if (STATE.isStudentView) return;
+
+            const modal = document.getElementById('modal-booking');
+            const title = document.getElementById('booking-modal-title');
+            const btnDelete = document.getElementById('btn-delete-booking');
+
+            if (booking) {
+                title.innerText = '編輯課程預約';
+                document.getElementById('booking-id').value = booking.id;
+                document.getElementById('booking-student-id').value = booking.studentId;
+                document.getElementById('booking-date').value = booking.date;
+                document.getElementById('booking-start-time').value = booking.startTime;
+                document.getElementById('booking-end-time').value = booking.endTime;
+                document.getElementById('booking-type').value = booking.type || '';
+                document.getElementById('booking-status').value = booking.status || 'CONFIRMED';
+                document.getElementById('booking-notes').value = booking.notes || '';
+                btnDelete.classList.remove('hidden');
+            } else {
+                title.innerText = '新增課程預約';
+                document.getElementById('booking-form').reset();
+                document.getElementById('booking-id').value = '';
+                document.getElementById('booking-date').value = defaultDate || getFormattedDateStr(0);
+                document.getElementById('booking-start-time').value = '10:00';
+                document.getElementById('booking-end-time').value = '11:00';
+                document.getElementById('booking-status').value = 'CONFIRMED';
+                btnDelete.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('modal-booking').classList.add('hidden');
+        }
+
+        function handleSaveBooking(e) {
+            e.preventDefault();
+            const id = document.getElementById('booking-id').value;
+            const studentId = document.getElementById('booking-student-id').value;
+            const date = document.getElementById('booking-date').value;
+            const startTime = document.getElementById('booking-start-time').value;
+            const endTime = document.getElementById('booking-end-time').value;
+            const type = document.getElementById('booking-type').value;
+            const status = document.getElementById('booking-status').value;
+            const notes = document.getElementById('booking-notes').value;
+
+            if (!studentId) {
+                alert('請選擇預約學員！');
+                return;
+            }
+
+            if (id) {
+                // Update existing
+                const index = STATE.bookings.findIndex(b => b.id === id);
+                if (index !== -1) {
+                    STATE.bookings[index] = { id, studentId, date, startTime, endTime, type, status, notes };
+                }
+            } else {
+                // Add new
+                const newBooking = {
+                    id: 'bk-' + Date.now(),
+                    studentId,
+                    date,
+                    startTime,
+                    endTime,
+                    type,
+                    status,
+                    notes
+                };
+                STATE.bookings.push(newBooking);
+            }
+
+            saveDataToStorage();
+            closeBookingModal();
+            renderCalendar();
+            syncToCloud();
+        }
+
+        function handleDeleteBooking() {
+            const id = document.getElementById('booking-id').value;
+            if (id && confirm('確定要刪除此筆預約記錄嗎？')) {
+                STATE.bookings = STATE.bookings.filter(b => b.id !== id);
+                saveDataToStorage();
+                closeBookingModal();
+                renderCalendar();
+                syncToCloud();
+            }
+        }
+
+        // --- STUDENTS MODAL ACTIONS ---
+        function populateStudentDropdowns() {
+            const bookingSelect = document.getElementById('booking-student-id');
+            const filterSelect = document.getElementById('filter-student');
+
+            let optionsHtml = '';
+            STATE.students.forEach(s => {
+                optionsHtml += `<option value="${s.id}">${s.name} (剩餘 ${s.remainingLessons || 0} 堂)</option>`;
+            });
+
+            bookingSelect.innerHTML = optionsHtml;
+
+            filterSelect.innerHTML = `<option value="ALL">全部學員</option>` + STATE.students.map(s => 
+                `<option value="${s.id}">${s.name}</option>`
+            ).join('');
+        }
+
+        function openStudentsModal() {
+            renderStudentsList();
+            document.getElementById('modal-students').classList.remove('hidden');
+        }
+
+        function closeStudentsModal() {
+            document.getElementById('modal-students').classList.add('hidden');
+        }
+
+        function renderStudentsList() {
+            const container = document.getElementById('students-list-container');
+            if (STATE.students.length === 0) {
+                container.innerHTML = `<p class="text-xs text-morandi-400 py-4 text-center">目前無學員資料</p>`;
+                return;
+            }
+
+            let html = '';
+            STATE.students.forEach(s => {
+                html += `
+                    <div class="py-2.5 flex items-center justify-between text-xs">
+                        <div>
+                            <div class="font-bold text-morandi-800">${s.name}</div>
+                            <div class="text-morandi-400 text-[11px]">${s.phone || '無電話'}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="flex items-center bg-morandi-50 border border-morandi-200 rounded-lg px-2 py-1">
+                                <span class="text-morandi-600 mr-1 text-[11px]">剩餘課時:</span>
+                                <input type="number" value="${s.remainingLessons || 0}" min="0" onchange="updateStudentLessons('${s.id}', this.value)" class="w-10 text-center font-bold bg-transparent outline-none text-morandi-800">
+                            </div>
+                            <button onclick="handleDeleteStudent('${s.id}')" class="text-rose-400 hover:text-rose-600 p-1">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function handleAddStudent(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('new-student-name');
+            const phoneInput = document.getElementById('new-student-phone');
+
+            const newStudent = {
+                id: 'st-' + Date.now(),
+                name: nameInput.value.trim(),
+                phone: phoneInput.value.trim(),
+                remainingLessons: 10
+            };
+
+            STATE.students.push(newStudent);
+            saveDataToStorage();
+            nameInput.value = '';
+            phoneInput.value = '';
+            renderStudentsList();
+            renderCalendar();
+            syncToCloud();
+        }
+
+        function updateStudentLessons(studentId, newCount) {
+            const student = STATE.students.find(s => s.id === studentId);
+            if (student) {
+                student.remainingLessons = parseInt(newCount, 10) || 0;
+                saveDataToStorage();
+                syncToCloud();
+            }
+        }
+
+        function handleDeleteStudent(studentId) {
+            if (confirm('確定刪除該學員？這不會直接刪除過去預約紀錄，但可能影響顯示。')) {
+                STATE.students = STATE.students.filter(s => s.id !== studentId);
+                saveDataToStorage();
+                renderStudentsList();
+                renderCalendar();
+                syncToCloud();
+            }
+        }
+
+        // --- SETTINGS & JSON / GOOGLE APPS SCRIPT BACKUP SYNC ---
+        function toggleSettingsMenu() {
+            const menu = document.getElementById('settings-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function saveGASUrl() {
+            const url = document.getElementById('gas-url-input').value.trim();
+            STATE.gasUrl = url;
+            localStorage.setItem('fitpro_gas_url', url);
+            alert('Google Apps Script WebApp 連結已儲存！');
+            toggleSettingsMenu();
+        }
+
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(STATE, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `FITPRO_Backup_${getFormattedDateStr(0)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importDataJSON(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState.students && importedState.bookings) {
+                        STATE.students = importedState.students;
+                        STATE.bookings = importedState.bookings;
+                        STATE.blockedDays = importedState.blockedDays || [];
+                        saveDataToStorage();
+                        renderCalendar();
+                        alert('備份資料匯入成功！');
+                    } else {
+                        alert('JSON 格式不符！');
+                    }
+                } catch (err) {
+                    alert('無法讀取 JSON 檔案');
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        function triggerCloudSync() {
+            syncToCloud(true);
+        }
+
+        function syncToCloud(manualAlert = false) {
+            if (!STATE.gasUrl) {
+                if (manualAlert) alert('未設定 Google Apps Script WebApp URL，無法同步至雲端。');
+                return;
+            }
+
+            const syncText = document.getElementById('sync-status-text');
+            if (syncText) syncText.innerText = '同步中...';
+
+            fetch(STATE.gasUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    students: STATE.students,
+                    bookings: STATE.bookings,
+                    blockedDays: STATE.blockedDays,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(() => {
+                if (syncText) syncText.innerText = '已連線同步';
+                if (manualAlert) alert('已送出雲端同步請求！');
+            })
+            .catch(err => {
+                if (syncText) syncText.innerText = '同步失敗';
+                console.error('Sync Error:', err);
+            });
+        }
+    </script>
+</body>
+</html>
